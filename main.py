@@ -1,4 +1,5 @@
 import logging
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import bybit, upbit
@@ -36,6 +37,20 @@ async def health():
         "version": "1.0.0"
     }
 
+@app.get("/api/ip", summary="Get Server Public IP")
+async def get_server_ip():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://api.ipify.org?format=json", timeout=5.0)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"ip": "Unknown (Status: {})".format(response.status_code)}
+    except Exception as e:
+        logger.error(f"Failed to get server public IP: {e}")
+        return {"ip": "Unknown (Error)"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
